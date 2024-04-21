@@ -1,0 +1,61 @@
+---
+# Pat to ffmpeg binary
+ffmpeg_bin: "E:/LTSpiceBatch/ffmpeg-2024-04-18-git-35ae44c615-essentials_build/bin/ffmpeg.exe"
+# Force hardware acceleration on/off for ffmpeg
+# ffmpeg_hw_accel: true
+# Video framerate
+ffmpeg_framerate: 6
+# Images settings
+image:
+  dpi: 100
+  width: 1920
+  heigth: 1080
+# Input schematic
+input_file: "E:/LTSpiceBatch/high-low pass.asc"
+# # parallel jobs
+parallel: 4
+# Single job timeout
+runner_timeout: 30
+# Job steps
+steps:
+  - name: High-pass AC
+    # Override simulation command
+    sim_command: .ac dec 100 20 20k
+    # Traces to be plotted
+    tracestoplot:
+      - V(out_passe_haut)
+      - V(out_passe_bas)
+    # Variable parameters
+    parameters:
+    # single value, list or {start, stop, step}
+      c1:
+        start: 1e-12
+        stop: 10e-11
+        step: 2e-12
+      c2: 6.8e-9
+  - name: Low-pass AC
+    sim_command: .ac dec 100 10 20k
+    tracestoplot:
+      - V(out_passe_bas)
+    parameters:
+      c2:
+        start: 1e-9
+        stop: 100e-9
+        step: 1e-9
+  - name: Low-pass Tran
+    sim_command: .tran {10/freq}
+    # Override framerate
+    ffmpeg_framerate: 1
+    tracestoplot:
+      - V(n001)
+      - V(out_passe_bas)
+      - V(out_passe_haut)
+    parameters:
+      freq:
+        - 10
+        - 73
+        - 259
+        - 657
+        - 978
+        - 1.2e5
+temp_folder: "E:/LTSpiceBatch/temp"

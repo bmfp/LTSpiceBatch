@@ -62,8 +62,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ env.ffmpeg_version }}-${{ env.uv_version }}
-          release_name: Release ${{ env.ffmpeg_version }}-${{ env.uv_version }}
+          tag: v${{ env.ffmpeg_version }}-${{ env.uv_version }}
+          title: Release ${{ env.ffmpeg_version }}-${{ env.uv_version }}
           body: |
             Release containing:
             - FFmpeg version: ${{ env.ffmpeg_version }}
@@ -74,7 +74,6 @@ jobs:
             - uv.exe
             
             Source code: Included in the archive
-          draft: true
           prerelease: true
 
       - name: Upload combined archive

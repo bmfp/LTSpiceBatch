@@ -41,7 +41,7 @@ jobs:
 
       - name: Download and extract uv
         run: |
-          curl -L -o uv.tar.gz ${{ env.uv_asset_url }}
+          curl -L -o uv.zip ${{ env.uv_asset_url }}
           mkdir -p uv_extracted
           tunzip uv.zip -d uv_extracted
 
@@ -49,7 +49,7 @@ jobs:
         run: |
           mkdir -p release
           # Copier les binaires
-          cp -r ffmpeg_extracted/ffmpeg.exe release/
+          cp -r ffmpeg_extracted/bin/ffmpeg.exe release/
           cp -r uv_extracted/uv.exe release/
           # Copier le code source du dépôt
           cp -r ./* release/

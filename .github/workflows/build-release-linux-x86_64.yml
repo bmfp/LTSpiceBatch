@@ -49,7 +49,7 @@ jobs:
         run: |
           mkdir -p release
           # Copier les binaires
-          cp -r ffmpeg_extracted/ffmpeg release/
+          cp -r ffmpeg_extracted/bin/ffmpeg release/
           cp -r uv_extracted/uv release/
           # Copier le code source du dépôt
           cp -r ./* release/

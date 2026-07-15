@@ -1,0 +1,17 @@
+[project]
+name = "LTSpiceBatch"
+version = "0.1.0"
+description = "LTSpiceBatch"
+readme = "README.md"
+dependencies = [
+    "chardet",
+    "pyltspice",
+    "pyyaml",
+	"unidecode"
+]
+requires-python = ">=3.13"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.10",
+]

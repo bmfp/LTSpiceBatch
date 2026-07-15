@@ -1,0 +1,96 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0'  # Exécution chaque dimanche à minuit
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Get latest FFmpeg release
+        id: ffmpeg
+        run: |
+          FFmpeg_RELEASE_URL="https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest"
+          FFmpeg_ASSET_URL=$(curl -sL $FFmpeg_RELEASE_URL | jq -r '.assets[] | select(.name | contains("linux64-lgpl-8.1.tar.xz")) | .browser_download_url')
+          echo "ffmpeg_asset_url=$FFmpeg_ASSET_URL" >> $GITHUB_ENV
+          echo "ffmpeg_version=$(curl -sL $FFmpeg_RELEASE_URL | jq -r '.tag_name')" >> $GITHUB_ENV
+
+      - name: Get latest uv release
+        id: uv
+        run: |
+          UV_RELEASE_URL="https://api.github.com/repos/astral-sh/uv/releases/latest"
+          UV_ASSET_URL=$(curl -sL $UV_RELEASE_URL | jq -r '.assets[] | select(.name | test("x86_64-unknown-linux-gnu.tar.gz$")) | .browser_download_url')
+          echo "uv_asset_url=$UV_ASSET_URL" >> $GITHUB_ENV
+          echo "uv_version=$(curl -sL $UV_RELEASE_URL | jq -r '.tag_name')" >> $GITHUB_ENV
+
+      - name: Download and extract FFmpeg
+        run: |
+          curl -L -o ffmpeg.tar.xz ${{ env.ffmpeg_asset_url }}
+          mkdir -p ffmpeg_extracted
+          tar -xf ffmpeg.tar.xz -C ffmpeg_extracted --strip-components=1
+
+      - name: Download and extract uv
+        run: |
+          curl -L -o uv.tar.gz ${{ env.uv_asset_url }}
+          mkdir -p uv_extracted
+          tar -xf uv.tar.gz -C uv_extracted --strip-components=1
+
+      - name: Create combined release structure
+        run: |
+          mkdir -p release
+          # Copier les binaires
+          cp -r ffmpeg_extracted/ffmpeg release/
+          cp -r uv_extracted/uv release/
+          # Copier le code source du dépôt
+          cp -r ./* release/
+          # Rendre les binaires exécutables
+          chmod +x release/ffmpeg
+          chmod +x release/uv
+
+      - name: Create combined archive
+        run: |
+          tar -czf release.tar.gz -C release .
+
+      - name: Create release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.ffmpeg_version }}-${{ env.uv_version }}
+          release_name: Release ${{ env.ffmpeg_version }}-${{ env.uv_version }}
+          body: |
+            Release containing:
+            - FFmpeg version: ${{ env.ffmpeg_version }}
+            - uv version: ${{ env.uv_version }}
+            
+            Binaries included:
+            - ffmpeg
+            - uv
+            
+            Source code: Included in the archive
+          draft: true
+          prerelease: true
+
+      - name: Upload combined archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release.tar.gz
+          asset_name: release-${{ env.ffmpeg_version }}-${{ env.uv_version }}.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Cleanup
+        run: |
+          rm -rf ffmpeg_extracted uv_extracted release release.tar.gz

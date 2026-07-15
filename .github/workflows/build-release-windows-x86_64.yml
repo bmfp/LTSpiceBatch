@@ -52,7 +52,7 @@ jobs:
           cp -r ffmpeg_extracted/bin/ffmpeg.exe release/
           cp -r uv_extracted/uv.exe release/
           # Copier le code source du dépôt
-          cp -r $(ls -a --ignore release ./) release/
+          cp -r $(ls --ignore release ./) release/
 
       - name: Create combined archive
         run: |

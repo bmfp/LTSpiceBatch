@@ -54,10 +54,12 @@ jobs:
           # Rendre les binaires exécutables
           chmod +x ./ffmpeg
           chmod +x ./uv
+          ls -l
 
       - name: Create combined archive
         run: |
-          tar -czf release.tar.gz .
+          touch release.tar.gz
+          tar --exclude=release.tar.gz -czf release.tar.gz .
 
       - name: Create release
         uses: elgohr/Github-Release-Action@v5

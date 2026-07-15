@@ -11,8 +11,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          path: source
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -51,10 +49,9 @@ jobs:
         run: |
           mkdir -p release
           # Copier les binaires
-          cp -r ffmpeg_extracted/bin/ffmpeg.exe release/
-          cp -r uv_extracted/uv.exe release/
-          # Copier le code source du dépôt
-          cp -r source/* release/
+          cp -r ffmpeg_extracted/bin/ffmpeg.exe ./
+          cp -r uv_extracted/uv.exe ./
+          rm -rf ffmpeg_extracted uv_extracted
 
       - name: Create combined archive
         run: |

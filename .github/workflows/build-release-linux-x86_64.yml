@@ -11,8 +11,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          path: source
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -49,19 +47,17 @@ jobs:
 
       - name: Create combined release structure
         run: |
-          mkdir -p release
           # Copier les binaires
-          cp -r ffmpeg_extracted/bin/ffmpeg release/
-          cp -r uv_extracted/uv release/
-          # Copier le code source du dépôt
-          cp -r source/* release/
+          cp -r ffmpeg_extracted/bin/ffmpeg ./
+          cp -r uv_extracted/uv ./
+          rm -rf ffmpeg_extracted uv_extracted
           # Rendre les binaires exécutables
-          chmod +x release/ffmpeg
-          chmod +x release/uv
+          chmod +x ./ffmpeg
+          chmod +x ./uv
 
       - name: Create combined archive
         run: |
-          tar -czf release.tar.gz -C release .
+          tar -czf release.tar.gz .
 
       - name: Create release
         uses: elgohr/Github-Release-Action@v5

@@ -63,7 +63,7 @@ jobs:
 
       - name: Linux - Cleanup
         run: |
-          rm -rf ffmpeg* uv* release release*
+          rm -rf ffmpeg* uv*
 
       - name: Windows - Get latest FFmpeg release
         id: windows-ffmpeg
@@ -104,7 +104,7 @@ jobs:
 
       - name: Windows - Create combined archive
         run: |
-          zip -r release.zip ./
+          zip -r release.zip ./ -x release.tar.gz
 
       - name: Upload combined archive
         uses: softprops/action-gh-release@v3

@@ -61,14 +61,33 @@ jobs:
           touch release.tar.gz
           tar --exclude=release.tar.gz -czf release.tar.gz .
 
-      - name: Create release
-        uses: elgohr/Github-Release-Action@v5
+      # - name: Create release
+      #   uses: elgohr/Github-Release-Action@v5
 
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     tag: v${{ env.ffmpeg_version }}-${{ env.uv_version }}
+      #     title: Release ${{ env.ffmpeg_version }}-${{ env.uv_version }}
+      #     body: |
+      #       Release containing:
+      #       - FFmpeg version: ${{ env.ffmpeg_version }}
+      #       - uv version: ${{ env.uv_version }}
+            
+      #       Binaries included:
+      #       - ffmpeg
+      #       - uv
+            
+      #       Source code: Included in the archive
+      #     prerelease: true
+
+      - name: Upload combined archive
+        uses: softprops/action-gh-release@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag: v${{ env.ffmpeg_version }}-${{ env.uv_version }}
-          title: Release ${{ env.ffmpeg_version }}-${{ env.uv_version }}
+          tag_name: v${{ env.ffmpeg_version }}-${{ env.uv_version }}
+          name: Release ${{ env.ffmpeg_version }}-${{ env.uv_version }}
           body: |
             Release containing:
             - FFmpeg version: ${{ env.ffmpeg_version }}
@@ -79,17 +98,12 @@ jobs:
             - uv
             
             Source code: Included in the archive
-          prerelease: true
-
-      - name: Upload combined archive
-        uses: softprops/action-gh-release@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./release.tar.gz
-          asset_name: release-${{ env.ffmpeg_version }}-${{ env.uv_version }}.tar.gz
-          asset_content_type: application/gzip
+          file: ./release.tar.gz
+          # asset_name: release-${{ env.ffmpeg_version }}-${{ env.uv_version }}.tar.gz
+          # asset_content_type: application/gzip
+          prerelease: true
+          draft: true
 
       - name: Cleanup
         run: |

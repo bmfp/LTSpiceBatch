@@ -61,6 +61,10 @@ jobs:
           touch release.tar.gz
           tar --exclude=release.tar.gz -czf release.tar.gz .
 
+      - name: Linux - Cleanup
+        run: |
+          rm -rf ffmpeg* uv* release release*
+
       - name: Windows - Get latest FFmpeg release
         id: windows-ffmpeg
         run: |
@@ -125,6 +129,6 @@ jobs:
           prerelease: true
           draft: true
 
-      - name: Cleanup
+      - name: Windows - Cleanup
         run: |
-          rm -rf ffmpeg_extracted uv_extracted release release.tar.gz
+          rm -rf ffmpeg* uv* release*

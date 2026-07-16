@@ -98,8 +98,8 @@ jobs:
             - uv
             
             Source code: Included in the archive
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          file: ./release.tar.gz
+          # upload_url: ${{ steps.create_release.outputs.upload_url }}
+          files: ./release.tar.gz
           # asset_name: release-${{ env.ffmpeg_version }}-${{ env.uv_version }}.tar.gz
           # asset_content_type: application/gzip
           prerelease: true

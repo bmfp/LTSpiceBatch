@@ -93,7 +93,7 @@ jobs:
         run: |
           mkdir -p release
           # Copier les binaires
-          cp -r ffmpeg_extracted/bin/ffmpeg.exe ./
+          cp -r $(find ffmpeg_extracted -name ffmpeg.exe) ./
           cp -r uv_extracted/uv.exe ./
           rm -rf ffmpeg_extracted uv_extracted ffmpeg.zip uv.zip
           ls -l

@@ -18,7 +18,7 @@ jobs:
           node-version: '22'
 
       - name: Linux - Get latest FFmpeg release
-        id: ffmpeg
+        id: linux-ffmpeg
         run: |
           FFmpeg_RELEASE_URL="https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest"
           FFmpeg_ASSET_URL=$(curl -sL $FFmpeg_RELEASE_URL | jq -r '.assets[] | select(.name | contains("linux64-lgpl-8.1.tar.xz")) | .browser_download_url')
@@ -26,7 +26,7 @@ jobs:
           echo "ffmpeg_version=$(curl -sL $FFmpeg_RELEASE_URL | jq -r '.tag_name')" >> $GITHUB_ENV
 
       - name: Linux - Get latest uv release
-        id: uv
+        id: linux-uv
         run: |
           UV_RELEASE_URL="https://api.github.com/repos/astral-sh/uv/releases/latest"
           UV_ASSET_URL=$(curl -sL $UV_RELEASE_URL | jq -r '.assets[] | select(.name | test("x86_64-unknown-linux-gnu.tar.gz$")) | .browser_download_url')
@@ -62,7 +62,7 @@ jobs:
           tar --exclude=release.tar.gz -czf release.tar.gz .
 
       - name: Windows - Get latest FFmpeg release
-        id: ffmpeg
+        id: windows-ffmpeg
         run: |
           FFmpeg_RELEASE_URL="https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest"
           FFmpeg_ASSET_URL=$(curl -sL $FFmpeg_RELEASE_URL | jq -r '.assets[] | select(.name | contains("win64-lgpl-8.1.zip")) | .browser_download_url')
@@ -70,7 +70,7 @@ jobs:
           echo "ffmpeg_version=$(curl -sL $FFmpeg_RELEASE_URL | jq -r '.tag_name')" >> $GITHUB_ENV
 
       - name: Windows - Get latest uv release
-        id: uv
+        id: windows-uv
         run: |
           UV_RELEASE_URL="https://api.github.com/repos/astral-sh/uv/releases/latest"
           UV_ASSET_URL=$(curl -sL $UV_RELEASE_URL | jq -r '.assets[] | select(.name | test("x86_64-pc-windows-msvc.zip$")) | .browser_download_url')

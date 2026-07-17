@@ -124,8 +124,8 @@ jobs:
             
             Source code: Included in the archive
           files: |
-            ./release.tar.gz
-            ./release.zip
+            release.tar.gz
+            release.zip
           prerelease: true
           draft: true
 

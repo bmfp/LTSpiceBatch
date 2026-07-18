@@ -1,4 +1,4 @@
-name: Build and Release linux x86_64
+name: Build and Release linux/windows x86_64 draft
 
 on:
   workflow_dispatch:
@@ -105,7 +105,7 @@ jobs:
         run: |
           zip -r release.zip ./ -x release.tar.gz
 
-      - name: Upload combined archive
+      - name: Upload combined archive (prerelease/draft)
         uses: softprops/action-gh-release@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

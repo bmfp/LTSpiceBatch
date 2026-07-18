@@ -95,7 +95,6 @@ jobs:
 
       - name: Windows - Create combined release structure
         run: |
-          mkdir -p release
           # Copier les binaires
           cp -r $(find ffmpeg_extracted -name ffmpeg.exe) ./
           cp -r uv_extracted/uv.exe ./

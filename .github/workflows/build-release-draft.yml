@@ -20,8 +20,9 @@ jobs:
       - name: Set release name
         id: set-releases-name
         run: |
-          echo "release_name_version=$(date '+%Y%m%d-%H%M')" >> $GITHUB_ENV
-          echo "release_name=LTSpiceBatch-${{ env.release_name_version }}" >> $GITHUB_ENV
+          dte=$(date '+%Y%m%d-%H%M')
+          echo "release_name_version=$dte" >> $GITHUB_ENV
+          echo "release_name=LTSpiceBatch-$dte" >> $GITHUB_ENV
 
       - name: Linux - Get latest FFmpeg release
         id: linux-ffmpeg

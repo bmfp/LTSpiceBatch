@@ -66,7 +66,7 @@ jobs:
       - name: Linux - Create combined archive
         run: |
           mkdir ${{ env.release_name }}
-          cp 'high-low pass.asc' 'high-low pass.yml' launcher.py LTSpiceBatch.py Readme.md run.sh LICENSE pyproject.toml run.bat ${{ env.release_name }}
+          cp 'high-low pass.asc' 'high-low pass.yml' launcher.py LTSpiceBatch.py Readme.md run.sh LICENSE pyproject.toml run.bat ffmpeg uv ${{ env.release_name }}
           chmod 755 ${{ env.release_name }}/run.sh
           tar czf ${{ env.release_name }}.tar.gz ${{ env.release_name }}
 
@@ -114,7 +114,7 @@ jobs:
         run: |
           zip -r release.zip ./ -x release.tar.gz
           mkdir ${{ env.release_name }}
-          cp 'high-low pass.asc' 'high-low pass.yml' launcher.py LTSpiceBatch.py Readme.md LICENSE pyproject.toml run.bat ${{ env.release_name }}
+          cp 'high-low pass.asc' 'high-low pass.yml' launcher.py LTSpiceBatch.py Readme.md LICENSE pyproject.toml run.bat ffmpeg.exe uv.exe ${{ env.release_name }}
           zip -r ${{ env.release_name }}.zip ${{ env.release_name }}
 
       - name: Upload combined archive (prerelease/draft)

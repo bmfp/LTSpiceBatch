@@ -296,7 +296,7 @@ class YamlGeneratorApp(tk.Tk):
             lf1,
             "ffmpeg_bin :",
             "ffmpeg_bin",
-            "/opt/python-uv/uv-linux/ffmpeg",
+            "",
             width=60,
             browse_file=True,
         )

@@ -356,8 +356,11 @@ class SlideshowApp(tk.Tk):
                 continue
             for params in self.images_files_props[img]["params"]:
                 for param in params:
-                    limit_from = self.vars[f"spinbox_{param}_from_combobox"].cget("values")
-                    limit_to = self.vars[f"spinbox_{param}_to_combobox"].cget("values")
+                    try:
+                        limit_from = self.vars[f"spinbox_{param}_from_combobox"].cget("values")
+                        limit_to = self.vars[f"spinbox_{param}_to_combobox"].cget("values")
+                    except KeyError:
+                        continue
                     if len(limit_from) == len(limit_to):
                         continue
                     limits = list(set(limit_from) & set(limit_to))
@@ -382,7 +385,7 @@ class SlideshowApp(tk.Tk):
                 for param in params:
                     if param not in self.step_params:
                         self.step_params[param] = []
-                    if params[param] not in self.step_params[param]:
+                    if isinstance(params[param], (int, float)) and params[param] not in self.step_params[param]:
                         self.step_params[param].append(params[param])
 
         # clean filters frame
@@ -394,6 +397,8 @@ class SlideshowApp(tk.Tk):
         self.vars["spinbox_steps_combobox"] = ttk.Combobox(self.filters, values=self.steps, state="readonly", textvariable=self.vars["spinbox_steps_value"])
         self.vars["spinbox_steps_combobox"].pack(side=tk.LEFT, padx=(0, 4))
         for param in self.step_params:
+            if self.step_params[param] == []:
+                continue
             sorted_values = sorted(self.step_params[param])
             self.vars[f"spinbox_{param}_from_value"] = tk.DoubleVar(self.filters, sorted_values[0],  f"spinbox_{param}_from_value")
             self.vars[f"spinbox_{param}_from_value"].trace_add("write", self._scale_callback)

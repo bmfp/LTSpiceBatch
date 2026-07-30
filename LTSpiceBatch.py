@@ -772,7 +772,8 @@ show_freq_domains: {self.show_freq_domains}
         """try to cast as int/float, or keep string."""
         power = 0
         try:
-            return int(value)
+            if int(value) >= 1:
+                return int(value)
         except (ValueError, TypeError):
             pass
         try:

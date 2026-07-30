@@ -189,6 +189,7 @@ class YamlGeneratorApp(tk.Tk):
         """load last working params"""
         data = {}
         config_file = Path(__file__).parent.joinpath(".config.yml")
+        self.last_opened_dir = Path.home()
         if config_file.exists():
             self.status_var.set("loading last working paths")
             with open(config_file, "r", encoding="utf-8") as f:
@@ -197,7 +198,8 @@ class YamlGeneratorApp(tk.Tk):
                     return
                 if data.get("ffmpeg_bin", "") != "":
                     self.var_ffmpeg_bin.set(data.get("ffmpeg_bin"))
-                setattr(self, "last_opened_dir", data.get("last_opened_dir", Path.home()))
+                if data.get("last_opened_dir"):
+                    self.last_opened_dir = data.get("last_opened_dir")
                 if PLATFORM_SYSTEM == "Linux":
                     if data.get("wine_executable", "") != "":
                         self.var_wine_executable.set(data.get("wine_executable"))
@@ -213,7 +215,7 @@ class YamlGeneratorApp(tk.Tk):
         if getattr(self, "var_ffmpeg_bin", "") != "":
             data["ffmpeg_bin"] = self.var_ffmpeg_bin.get()
         if getattr(self, "last_opened_dir"):
-            data["last_opened_dir"] = self.last_opened_dir
+            data["last_opened_dir"] = str(self.last_opened_dir)
         if PLATFORM_SYSTEM == "Linux":
             if getattr(self, "var_wine_executable", "") != "":
                 data["wine_executable"] = self.var_wine_executable.get()
@@ -371,7 +373,8 @@ class YamlGeneratorApp(tk.Tk):
                 "wine executable :\nto set custom location or appimage path",
                 "wine_executable",
                 "",
-                width=10,
+                width=50,
+                label_width=40,
                 browse_file=True,
                 filetypes=[("All files", "*.*")],
             )
@@ -380,7 +383,8 @@ class YamlGeneratorApp(tk.Tk):
                 "wine folder :\nto set .wine directory",
                 "wine_folder",
                 "",
-                width=10,
+                width=50,
+                label_width=40,
                 browse_dir=True,
             )
 
@@ -394,6 +398,7 @@ class YamlGeneratorApp(tk.Tk):
         key,
         default,
         width=30,
+        label_width=30,
         browse_file=False,
         browse_dir=False,
         filetypes=None,
@@ -401,7 +406,7 @@ class YamlGeneratorApp(tk.Tk):
         """line with label + entry + opt brows button"""
         row = ttk.Frame(parent)
         row.pack(fill="x", pady=3)
-        ttk.Label(row, text=label, width=20, anchor="w").pack(side="left")
+        ttk.Label(row, text=label, width=label_width, anchor="w").pack(side="left")
 
         var = tk.StringVar(value=default)
         setattr(self, f"var_{key}", var)

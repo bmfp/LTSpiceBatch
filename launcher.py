@@ -197,6 +197,7 @@ class YamlGeneratorApp(tk.Tk):
                     return
                 if data.get("ffmpeg_bin", "") != "":
                     self.var_ffmpeg_bin.set(data.get("ffmpeg_bin"))
+                setattr(self, "last_opened_dir", data.get("last_opened_dir", Path.home()))
                 if PLATFORM_SYSTEM == "Linux":
                     if data.get("wine_executable", "") != "":
                         self.var_wine_executable.set(data.get("wine_executable"))
@@ -211,6 +212,8 @@ class YamlGeneratorApp(tk.Tk):
         self.status_var.set("saving last working paths")
         if getattr(self, "var_ffmpeg_bin", "") != "":
             data["ffmpeg_bin"] = self.var_ffmpeg_bin.get()
+        if getattr(self, "last_opened_dir"):
+            data["last_opened_dir"] = self.last_opened_dir
         if PLATFORM_SYSTEM == "Linux":
             if getattr(self, "var_wine_executable", "") != "":
                 data["wine_executable"] = self.var_wine_executable.get()
@@ -342,7 +345,14 @@ class YamlGeneratorApp(tk.Tk):
             width=50,
         )
         self._labeled_checkbox(
-            lf4, "keep images :\nkeep generated images", "keep_images", False, width=50
+            lf4,
+            "skip encode :\ndon't encode video with generated images",
+            "skipencode",
+            False,
+            width=50,
+        )
+        self._labeled_checkbox(
+            lf4, "keep images :\nkeep generated images (eg: to use with diapo tool)", "keep_images", True, width=50
         )
         self._labeled_checkbox(lf4, "cleanup temp dir:", "cleanup", False, width=50)
         self._labeled_checkbox(
@@ -409,25 +419,27 @@ class YamlGeneratorApp(tk.Tk):
         entry.pack(side="left", padx=(0, 5))
 
         if browse_file:
-
             def _browse(v=var, ft=filetypes):
                 path = filedialog.askopenfilename(
                     filetypes=ft or [("All files", "*.*")],
-                    initialdir=Path.home()
+                    initialdir=self.last_opened_dir
                 )
                 if path:
                     v.set(path)
+                    setattr(self, "last_opened_dir", Path(path).parent)
 
             ttk.Button(
                 row, text=get_string("📂 Browse"), command=_browse, width=10
             ).pack(side="left")
 
         if browse_dir:
-
             def _browse_dir(v=var):
-                path = filedialog.askdirectory()
+                path = filedialog.askdirectory(
+                    initialdir=self.last_opened_dir
+                )
                 if path:
                     v.set(path)
+                    setattr(self, "last_opened_dir", Path(path))
 
             ttk.Button(
                 row, text=get_string("📂 Browse"), command=_browse_dir, width=10
@@ -621,6 +633,8 @@ class YamlGeneratorApp(tk.Tk):
                 cmd_parts = [uv_path, "run", lspicebatch_path, "-c", yaml_path]
                 if hasattr(self, "var_encode_only") and self.var_encode_only.get():
                     cmd_parts.append("--encode-only")
+                if hasattr(self, "var_skip_encode") and self.var_skip_encode.get():
+                    cmd_parts.append("--skip-encode")
                 if hasattr(self, "var_keep_images") and self.var_keep_images.get():
                     cmd_parts.append("--keep-images")
                 if hasattr(self, "var_cleanup") and self.var_cleanup.get():
@@ -830,15 +844,16 @@ class YamlGeneratorApp(tk.Tk):
         return path
 
     
-    # lod yaml    
+    # load yaml    
     def _load_yaml(self):
         path = filedialog.askopenfilename(
             filetypes=[("YAML files", "*.yaml *.yml"), ("All files", "*.*")],
             title="Load YAML file",
-            initialdir=Path.home(),
+            initialdir=self.last_opened_dir
         )
         if not path:
             return
+        setattr(self, "last_opened_dir", str(Path(path).parent))
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)

@@ -332,7 +332,7 @@ class SlideshowApp(tk.Tk):
         # Vider complètement le pool — l'image courante sera rechargée si besoin.
         self._pool.clear()
 
-    def _scale_callback(self, *args):
+    def _var_change_callback(self, *args):
         step = self.vars["spinbox_steps_value"].get()
         setattr(self, "current_step", step)
         self._aggr_props(step=step)
@@ -393,7 +393,7 @@ class SlideshowApp(tk.Tk):
             widget.destroy()
         self.vars = {}
         self.vars["spinbox_steps_value"] = tk.StringVar(self.filters, getattr(self, "current_step", self.steps[0]), "spinbox_steps")
-        self.vars["spinbox_steps_value"].trace_add("write", self._scale_callback)
+        self.vars["spinbox_steps_value"].trace_add("write", self._var_change_callback)
         self.vars["spinbox_steps_combobox"] = ttk.Combobox(self.filters, values=self.steps, state="readonly", textvariable=self.vars["spinbox_steps_value"])
         self.vars["spinbox_steps_combobox"].pack(side=tk.LEFT, padx=(0, 4))
         for param in self.step_params:
@@ -401,10 +401,10 @@ class SlideshowApp(tk.Tk):
                 continue
             sorted_values = sorted(self.step_params[param])
             self.vars[f"spinbox_{param}_from_value"] = tk.DoubleVar(self.filters, sorted_values[0],  f"spinbox_{param}_from_value")
-            self.vars[f"spinbox_{param}_from_value"].trace_add("write", self._scale_callback)
+            self.vars[f"spinbox_{param}_from_value"].trace_add("write", self._var_change_callback)
             self.vars[f"spinbox_{param}_values"] = sorted_values
             self.vars[f"spinbox_{param}_to_value"] = tk.DoubleVar(self.filters, sorted_values[-1],  f"spinbox_{param}_to_value")
-            self.vars[f"spinbox_{param}_to_value"].trace_add("write", self._scale_callback)
+            self.vars[f"spinbox_{param}_to_value"].trace_add("write", self._var_change_callback)
             ttk.Label(self.filters, text=param).pack(side=tk.LEFT, padx=(0, 4))
             self.vars[f"spinbox_{param}_from_combobox"] = ttk.Combobox(self.filters, values=sorted_values, state="readonly", textvariable=self.vars[f"spinbox_{param}_from_value"])
             self.vars[f"spinbox_{param}_from_combobox"].pack(side=tk.LEFT, padx=(0, 4))

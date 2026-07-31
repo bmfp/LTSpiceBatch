@@ -767,6 +767,17 @@ show_freq_domains: {self.show_freq_domains}
         for f in glob(f"{self.temp_folder}/*"):
             os.remove(f)
 
+    def save_images(self):
+        destdir_name = datetime.strftime(datetime.now(), "%Y%m%d-%H%M%S")
+        destdir = Path.joinpath(Path(self.input_file).parent, destdir_name)
+        if not destdir.exists():
+            self.logprint(f"Creating directory {str(destdir)}")
+            Path.mkdir(destdir, mode=750, exist_ok=True)
+        for f in Path(self.temp_folder).iterdir():
+            f.copy(Path.joinpath(destdir, f.name))
+        self.logprint(f"Images copied to {destdir}")
+        self.janitor()
+
     @staticmethod
     def _cast(value):
         """try to cast as int/float, or keep string."""
@@ -850,10 +861,6 @@ show_freq_domains: {self.show_freq_domains}
             netlist.remove_Xinstruction(r"^\.(ac|tran)")
             netlist.add_instruction(step["sim_command"])
 
-        # server = TCPServer(host="localhost", port=5000, mainpid=os.getpid())
-        # server_thread = threading.Thread(target=server.start, daemon=True)
-        # server_thread.start()
-
         self.logprint(
             f"""Step {step["name"]} - Processing {len(parameters_list)} combinations"""
         )
@@ -865,7 +872,6 @@ show_freq_domains: {self.show_freq_domains}
             # overriding he automatic netlist naming
             netlist_name_items = []
             for k, v in parameters_set.items():
-                # print(k,v)
                 if isinstance(v, float):
                     v = f"{v:.15f}"
                 netlist_name_items.append(f"""{k}_{v}""")
@@ -909,7 +915,6 @@ show_freq_domains: {self.show_freq_domains}
         plot_end = datetime.now()
         self.logprint(f"Preparing plots done in {plot_end - plot_start}")
         runner.cleanup_files()
-        # self.server.stop()
 
         # Sim Statistics
         self.logprint(
@@ -974,20 +979,6 @@ show_freq_domains: {self.show_freq_domains}
             self.logprint(f"Finished in {end - self.start}s")
         except TypeError:
             pass
-
-        # save base64 encoded images
-        # with open(f"{Path(__file__).parent}/diaporama.html", "r") as f:
-        #     html_tmpl = f.read()
-        # b64_imglist = []
-        # for img in list(set(imglist)):
-        #     b64_imglist.append(f"temp/{img}")
-        # with open(
-        #     self.input_file.replace(
-        #         "asc", step["name"] + f"""{"_fft_" if fft else ""}.html"""
-        #     ),
-        #     "w",
-        # ) as f:
-        #     f.write(html_tmpl.replace("__IMAGEDATA__", json.dumps(b64_imglist)))
 
     def server_stop(self):
         self.server.stop()
@@ -1054,7 +1045,6 @@ if __name__ == "__main__":
     ltsb = LTSpiceBatch(args=args)
     if args.cleanup:
         ltsb.janitor()
-        sys.exit(0)
     ltsb.test_ffmpeg()
     for step in ltsb.config["steps"]:
         step["name"] = "".join(
@@ -1071,4 +1061,6 @@ if __name__ == "__main__":
             ltsb.encode_video(step=step, fft=True)
         if not args.keep_images:
             ltsb.janitor()
+    if args.keep_images:
+        ltsb.save_images()
     ltsb.server_stop()

@@ -4,6 +4,7 @@
 import json
 import os
 import glob
+from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from PIL import Image, ImageTk
@@ -165,10 +166,8 @@ class SlideshowApp(tk.Tk):
         ctrl = ttk.Frame(main)
         ctrl.pack(fill=tk.X, pady=(10, 0))
 
-        btn_style = {"padding": "6 12"}
-
         def make_btn(text, command):
-            return ttk.Button(ctrl, text=text, command=command, **btn_style)
+            return ttk.Button(ctrl, text=text, command=command)
 
         self.btn_prev   = make_btn("◀ Précédent",   self._prev)
         self.btn_play   = make_btn("▶ Lecture",     self._toggle_play)
@@ -186,26 +185,33 @@ class SlideshowApp(tk.Tk):
         ttk.Spinbox(
             ctrl, from_=250, to=6000, increment=250,
             width=8, textvariable=self.interval_var,
-            command=self._on_interval_change
+            command=self._on_interval_change,
+            name="spinbox_interval"
         ).pack(side=tk.LEFT)
+
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel, add="+")
 
     # ==================================================================
     # Chargement du dossier
     # ==================================================================
     def _browse_folder(self):
         """Ouvre le sélecteur de dossier et charge les PNG."""
-        folder = filedialog.askdirectory(title="Choisir un dossier d'images")
+        folder = Path(filedialog.askdirectory(title="Choisir un dossier d'images"))
         if not folder:
             return
 
-        pattern = os.path.join(folder, "*.png")
-        self.images_files = sorted(glob.glob(pattern))
+        try:
+            with open(list(folder.glob("*_imglist.txt"))[0], "r") as f:
+                self.images_files = [str(Path.joinpath(folder, Path(line.strip().split(" ")[1]))) for line in f.readlines() if line.startswith("file")]
+        except IndexError:
+            pattern = os.path.join(folder, "*.png")
+            self.images_files = sorted(glob.glob(pattern))
         self.images_files_filtered = [img for img in self.images_files]
         self.images_files_props = {img: {} for img in self.images_files}
 
         if not self.images_files:
             messagebox.showwarning("Aucune image",
-                                   "Le dossier ne contient pas de fichiers PNG.")
+                "Le dossier ne contient pas de fichiers PNG.")
             return
 
         # Load images properties
@@ -399,7 +405,7 @@ class SlideshowApp(tk.Tk):
         for param in self.step_params:
             if self.step_params[param] == []:
                 continue
-            sorted_values = sorted(self.step_params[param])
+            sorted_values = self.step_params[param] #sorted(self.step_params[param])
             self.vars[f"spinbox_{param}_from_value"] = tk.DoubleVar(self.filters, sorted_values[0],  f"spinbox_{param}_from_value")
             self.vars[f"spinbox_{param}_from_value"].trace_add("write", self._var_change_callback)
             self.vars[f"spinbox_{param}_values"] = sorted_values
@@ -494,6 +500,19 @@ class SlideshowApp(tk.Tk):
         
         # Ajuster la zone de scroll du canvas
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
+
+    def _on_mousewheel(self, event: tk.Event):
+        if event.widget.winfo_name() == "spinbox_interval":
+            return
+        if event.num == 4:      # Linux up
+            self._next()
+        elif event.num == 5:    # Linux down
+            self._prev()
+        else:
+            if event.delta > 0:
+                self._next()
+            else:
+                self._prev()
 
 def main():
     app = SlideshowApp()

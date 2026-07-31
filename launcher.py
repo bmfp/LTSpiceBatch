@@ -294,7 +294,7 @@ class YamlGeneratorApp(tk.Tk):
         f = self.global_frame
 
         # ---- ffmpeg ----
-        lf1 = ttk.LabelFrame(f, text=get_string(" 🎬 FFmpeg Settings "), padding=10)
+        lf1 = ttk.LabelFrame(self.global_frame, text=get_string(" 🎬 FFmpeg Settings "), padding=10)
         lf1.pack(fill="x", padx=15, pady=10)
 
         self._labeled_entry(
@@ -310,7 +310,7 @@ class YamlGeneratorApp(tk.Tk):
         )
 
         # ---- image ----
-        lf2 = ttk.LabelFrame(f, text=get_string(" 🖼  Image Settings "), padding=10)
+        lf2 = ttk.LabelFrame(self.global_frame, text=get_string(" 🖼  Image Settings "), padding=10)
         lf2.pack(fill="x", padx=15, pady=10)
 
         self._labeled_entry(lf2, "dpi :", "image_dpi", "100", width=10)
@@ -318,7 +318,7 @@ class YamlGeneratorApp(tk.Tk):
         self._labeled_entry(lf2, "height (px) :", "image_heigth", "1080", width=10)
 
         # ---- simulation ----
-        lf3 = ttk.LabelFrame(f, text=get_string(" ⚡ Simulation Settings "), padding=10)
+        lf3 = ttk.LabelFrame(self.global_frame, text=get_string(" ⚡ Simulation Settings "), padding=10)
         lf3.pack(fill="x", padx=15, pady=10)
 
         self._labeled_entry(
@@ -334,7 +334,7 @@ class YamlGeneratorApp(tk.Tk):
         self._labeled_entry(lf3, "parallel_plot :", "parallel_plot", "", width=10)
         self._labeled_entry(lf3, "runner_timeout :", "runner_timeout", "", width=10)
         # ---- opt ----
-        lf4 = ttk.LabelFrame(f, text=get_string(" 📁 Optional "), padding=10)
+        lf4 = ttk.LabelFrame(self.global_frame, text=get_string(" 📁 Optional "), padding=10)
         lf4.pack(fill="x", padx=15, pady=10)
         self._labeled_entry(
             lf4, "temp_folder :", "temp_folder", "", width=60, browse_dir=True
@@ -389,7 +389,47 @@ class YamlGeneratorApp(tk.Tk):
             )
 
         # mouse wheel bind
-        self.global_canvas.bind("<MouseWheel>", self._on_mousewheel_global)
+        self.global_frame.bind("<Configure>", self._on_inner_configure, add="+")
+        self.global_canvas.bind("<Configure>", self._on_canvas_configure, add="+")
+        self._bind_wheel_recursive(self.global_canvas)
+        self._bind_wheel_recursive(self.global_frame)
+
+    def _on_inner_configure(self, _event):
+        self.global_canvas.configure(scrollregion=self.global_canvas.bbox("all"))
+
+    def _on_canvas_configure(self, event):
+        self.global_canvas.itemconfigure(self.window_id, width=event.width)
+
+    def _bind_wheel_recursive(self, widget):
+        widget.bind("<Enter>", self._wheel_bind_all, add="+")
+        widget.bind("<Leave>", self._wheel_unbind_all, add="+")
+        for child in widget.winfo_children():
+            self._bind_wheel_recursive(child)
+
+    def _wheel_bind_all(self, _event):
+        # Windows / macOS
+        self.global_canvas.bind_all("<MouseWheel>", self._on_mousewheel, add="+")
+        # Linux (X11)
+        self.global_canvas.bind_all("<Button-4>", self._on_mousewheel, add="+")
+        self.global_canvas.bind_all("<Button-5>", self._on_mousewheel, add="+")
+
+    def _wheel_unbind_all(self, _event):
+        self.global_canvas.unbind_all("<MouseWheel>")
+        self.global_canvas.unbind_all("<Button-4>")
+        self.global_canvas.unbind_all("<Button-5>")
+
+    def _on_mousewheel(self, event: tk.Event):
+        canvas = event.widget
+        while not isinstance(canvas, tk.Canvas):
+            canvas = canvas.master
+        if event.num == 4:      # Linux up
+            canvas.yview_scroll(-1, "units")
+        elif event.num == 5:    # Linux down
+            canvas.yview_scroll(1, "units")
+        else:
+            step = -1 if event.delta > 0 else 1
+            canvas.yview_scroll(step, "units")
+        return "break"
 
     def _labeled_entry(
         self,
@@ -500,7 +540,8 @@ class YamlGeneratorApp(tk.Tk):
         self.steps_canvas.bind("<Configure>", self._on_canvas_configure)
 
         # mouse wheel bind
-        self.steps_canvas.bind("<MouseWheel>", self._on_mousewheel_steps)
+        self._bind_wheel_recursive(self.steps_canvas)
+        self._bind_wheel_recursive(self.steps_inner)
 
     def _on_steps_configure(self, event):
         self.steps_canvas.configure(scrollregion=self.steps_canvas.bbox("all"))

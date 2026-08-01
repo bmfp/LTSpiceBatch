@@ -202,18 +202,28 @@ class SlideshowApp(tk.Tk):
             return
 
         try:
-            with open(list(folder.glob("*_imglist.txt"))[0], "r") as f:
-                self.images_files = [str(Path.joinpath(folder, Path(line.strip().split(" ")[1]))) for line in f.readlines() if line.startswith("file")]
+            for imglist in list(folder.glob("*_imglist.txt")):
+                with open(imglist, "r") as f:
+                    self.images_files += [str(Path.joinpath(folder, Path(line.strip().split(" ")[1]))) for line in f.readlines() if line.startswith("file")]
         except IndexError:
             pattern = os.path.join(folder, "*.png")
             self.images_files = sorted(glob.glob(pattern))
-        self.images_files_filtered = [img for img in self.images_files]
-        self.images_files_props = {img: {} for img in self.images_files}
 
         if not self.images_files:
             messagebox.showwarning("Aucune image",
                 "Le dossier ne contient pas de fichiers PNG.")
             return
+
+        print(self.images_files)
+        _fft_images = []
+        for img in self.images_files:
+            if "fft_" in img:
+                _fft_images.append(img.replace("fft_", "", 1))
+        print(_fft_images)
+
+        self.images_files = _fft_images + self.images_files
+        self.images_files_filtered = self.images_files
+        self.images_files_props = {img: {} for img in self.images_files}
 
         # Load images properties
         for f in self.images_files:
@@ -383,7 +393,8 @@ class SlideshowApp(tk.Tk):
                             self.images_files_filtered.remove(img)
                         except ValueError:
                             pass
-        self.current_index = 0
+        self.current_index = -1
+        self._next()
 
     def _aggr_props(self, step=None):
         if step is not None:

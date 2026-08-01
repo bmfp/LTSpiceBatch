@@ -119,6 +119,31 @@ jobs:
 
       - name: Upload combined archive (prerelease/draft)
         uses: softprops/action-gh-release@v3
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.release_name_version }}
+          name: Release ${{ env.release_name_version }}
+          body: |
+            Release containing:
+            - FFmpeg version: ${{ env.ffmpeg_version }}
+            - uv version: ${{ env.uv_version }}
+            
+            Binaries included:
+            - ffmpeg
+            - uv
+            
+            Source code: Included in the archive
+          files: |
+            ${{ env.release_name }}.tar.gz
+            ${{ env.release_name }}.zip
+          prerelease: false
+          draft: false
+
+      - name: Upload combined archive (prerelease/draft)
+        uses: softprops/action-gh-release@v3
+        if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

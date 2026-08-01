@@ -1,4 +1,4 @@
-name: Build and Release linux/windows x86_64 draft
+name: Build and Release linux/windows x86_64
 
 on:
   workflow_dispatch:
@@ -66,8 +66,8 @@ jobs:
       - name: Linux - Create combined archive
         run: |
           mkdir ${{ env.release_name }}
-          cp 'high-low pass.asc' 'high-low pass.yml' launcher.py LTSpiceBatch.py Readme.md run.sh LICENSE pyproject.toml run.bat ffmpeg uv ${{ env.release_name }}
-          chmod 755 ${{ env.release_name }}/run.sh
+          cp 'high-low pass.asc' 'high-low pass.yml' launcher.py LTSpiceBatch.py Readme.md run*.sh LICENSE pyproject.toml ffmpeg uv ${{ env.release_name }}
+          chmod 750 ${{ env.release_name }}/run*.sh
           tar czf ${{ env.release_name }}.tar.gz ${{ env.release_name }}
 
       - name: Linux - Cleanup
@@ -114,11 +114,36 @@ jobs:
         run: |
           zip -r release.zip ./ -x release.tar.gz
           mkdir ${{ env.release_name }}
-          cp 'high-low pass.asc' 'high-low pass.yml' launcher.py LTSpiceBatch.py Readme.md LICENSE pyproject.toml run.bat ffmpeg.exe uv.exe ${{ env.release_name }}
+          cp 'high-low pass.asc' 'high-low pass.yml' launcher.py LTSpiceBatch.py Readme.md LICENSE pyproject.toml run*.bat ffmpeg.exe uv.exe ${{ env.release_name }}
           zip -r ${{ env.release_name }}.zip ${{ env.release_name }}
 
       - name: Upload combined archive (prerelease/draft)
         uses: softprops/action-gh-release@v3
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.release_name_version }}
+          name: Release ${{ env.release_name_version }}
+          body: |
+            Release containing:
+            - FFmpeg version: ${{ env.ffmpeg_version }}
+            - uv version: ${{ env.uv_version }}
+            
+            Binaries included:
+            - ffmpeg
+            - uv
+            
+            Source code: Included in the archive
+          files: |
+            ${{ env.release_name }}.tar.gz
+            ${{ env.release_name }}.zip
+          prerelease: false
+          draft: false
+
+      - name: Upload combined archive (prerelease/draft)
+        uses: softprops/action-gh-release@v3
+        if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

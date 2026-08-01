@@ -16,7 +16,7 @@ from chardet import UniversalDetector
 # default data
 DEFAULT_CONFIG = {
     "ffmpeg_framerate": 6,
-    "image": {"dpi": 100, "width": 1920, "heigth": 1080},
+    "image": {"dpi": 100, "width": 1920, "height": 1080},
     "input_file": "",
     "steps": [],
 }
@@ -189,6 +189,7 @@ class YamlGeneratorApp(tk.Tk):
         """load last working params"""
         data = {}
         config_file = Path(__file__).parent.joinpath(".config.yml")
+        self.last_opened_dir = Path.home()
         if config_file.exists():
             self.status_var.set("loading last working paths")
             with open(config_file, "r", encoding="utf-8") as f:
@@ -197,6 +198,8 @@ class YamlGeneratorApp(tk.Tk):
                     return
                 if data.get("ffmpeg_bin", "") != "":
                     self.var_ffmpeg_bin.set(data.get("ffmpeg_bin"))
+                if data.get("last_opened_dir"):
+                    self.last_opened_dir = data.get("last_opened_dir")
                 if PLATFORM_SYSTEM == "Linux":
                     if data.get("wine_executable", "") != "":
                         self.var_wine_executable.set(data.get("wine_executable"))
@@ -211,6 +214,8 @@ class YamlGeneratorApp(tk.Tk):
         self.status_var.set("saving last working paths")
         if getattr(self, "var_ffmpeg_bin", "") != "":
             data["ffmpeg_bin"] = self.var_ffmpeg_bin.get()
+        if getattr(self, "last_opened_dir"):
+            data["last_opened_dir"] = str(self.last_opened_dir)
         if PLATFORM_SYSTEM == "Linux":
             if getattr(self, "var_wine_executable", "") != "":
                 data["wine_executable"] = self.var_wine_executable.get()
@@ -289,7 +294,7 @@ class YamlGeneratorApp(tk.Tk):
         f = self.global_frame
 
         # ---- ffmpeg ----
-        lf1 = ttk.LabelFrame(f, text=get_string(" 🎬 FFmpeg Settings "), padding=10)
+        lf1 = ttk.LabelFrame(self.global_frame, text=get_string(" 🎬 FFmpeg Settings "), padding=10)
         lf1.pack(fill="x", padx=15, pady=10)
 
         self._labeled_entry(
@@ -305,15 +310,15 @@ class YamlGeneratorApp(tk.Tk):
         )
 
         # ---- image ----
-        lf2 = ttk.LabelFrame(f, text=get_string(" 🖼  Image Settings "), padding=10)
+        lf2 = ttk.LabelFrame(self.global_frame, text=get_string(" 🖼  Image Settings "), padding=10)
         lf2.pack(fill="x", padx=15, pady=10)
 
         self._labeled_entry(lf2, "dpi :", "image_dpi", "100", width=10)
         self._labeled_entry(lf2, "width (px) :", "image_width", "1920", width=10)
-        self._labeled_entry(lf2, "height (px) :", "image_heigth", "1080", width=10)
+        self._labeled_entry(lf2, "height (px) :", "image_height", "1080", width=10)
 
         # ---- simulation ----
-        lf3 = ttk.LabelFrame(f, text=get_string(" ⚡ Simulation Settings "), padding=10)
+        lf3 = ttk.LabelFrame(self.global_frame, text=get_string(" ⚡ Simulation Settings "), padding=10)
         lf3.pack(fill="x", padx=15, pady=10)
 
         self._labeled_entry(
@@ -329,7 +334,7 @@ class YamlGeneratorApp(tk.Tk):
         self._labeled_entry(lf3, "parallel_plot :", "parallel_plot", "", width=10)
         self._labeled_entry(lf3, "runner_timeout :", "runner_timeout", "", width=10)
         # ---- opt ----
-        lf4 = ttk.LabelFrame(f, text=get_string(" 📁 Optional "), padding=10)
+        lf4 = ttk.LabelFrame(self.global_frame, text=get_string(" 📁 Optional "), padding=10)
         lf4.pack(fill="x", padx=15, pady=10)
         self._labeled_entry(
             lf4, "temp_folder :", "temp_folder", "", width=60, browse_dir=True
@@ -342,7 +347,14 @@ class YamlGeneratorApp(tk.Tk):
             width=50,
         )
         self._labeled_checkbox(
-            lf4, "keep images :\nkeep generated images", "keep_images", False, width=50
+            lf4,
+            "skip encode :\ndon't encode video with generated images",
+            "skipencode",
+            False,
+            width=50,
+        )
+        self._labeled_checkbox(
+            lf4, "keep images :\nkeep generated images (eg: to use with diapo tool)", "keep_images", True, width=50
         )
         self._labeled_checkbox(lf4, "cleanup temp dir:", "cleanup", False, width=50)
         self._labeled_checkbox(
@@ -361,7 +373,8 @@ class YamlGeneratorApp(tk.Tk):
                 "wine executable :\nto set custom location or appimage path",
                 "wine_executable",
                 "",
-                width=10,
+                width=50,
+                label_width=40,
                 browse_file=True,
                 filetypes=[("All files", "*.*")],
             )
@@ -370,12 +383,53 @@ class YamlGeneratorApp(tk.Tk):
                 "wine folder :\nto set .wine directory",
                 "wine_folder",
                 "",
-                width=10,
+                width=50,
+                label_width=40,
                 browse_dir=True,
             )
 
         # mouse wheel bind
-        self.global_canvas.bind("<MouseWheel>", self._on_mousewheel_global)
+        self.global_frame.bind("<Configure>", self._on_inner_configure, add="+")
+        self.global_canvas.bind("<Configure>", self._on_canvas_configure, add="+")
+        self._bind_wheel_recursive(self.global_canvas)
+        self._bind_wheel_recursive(self.global_frame)
+
+    def _on_inner_configure(self, _event):
+        self.global_canvas.configure(scrollregion=self.global_canvas.bbox("all"))
+
+    def _on_canvas_configure(self, event):
+        self.global_canvas.itemconfigure(self.window_id, width=event.width)
+
+    def _bind_wheel_recursive(self, widget):
+        widget.bind("<Enter>", self._wheel_bind_all, add="+")
+        widget.bind("<Leave>", self._wheel_unbind_all, add="+")
+        for child in widget.winfo_children():
+            self._bind_wheel_recursive(child)
+
+    def _wheel_bind_all(self, _event):
+        # Windows / macOS
+        self.global_canvas.bind_all("<MouseWheel>", self._on_mousewheel, add="+")
+        # Linux (X11)
+        self.global_canvas.bind_all("<Button-4>", self._on_mousewheel, add="+")
+        self.global_canvas.bind_all("<Button-5>", self._on_mousewheel, add="+")
+
+    def _wheel_unbind_all(self, _event):
+        self.global_canvas.unbind_all("<MouseWheel>")
+        self.global_canvas.unbind_all("<Button-4>")
+        self.global_canvas.unbind_all("<Button-5>")
+
+    def _on_mousewheel(self, event: tk.Event):
+        canvas = event.widget
+        while not isinstance(canvas, tk.Canvas):
+            canvas = canvas.master
+        if event.num == 4:      # Linux up
+            canvas.yview_scroll(-1, "units")
+        elif event.num == 5:    # Linux down
+            canvas.yview_scroll(1, "units")
+        else:
+            step = -1 if event.delta > 0 else 1
+            canvas.yview_scroll(step, "units")
+        return "break"
 
     def _labeled_entry(
         self,
@@ -384,6 +438,7 @@ class YamlGeneratorApp(tk.Tk):
         key,
         default,
         width=30,
+        label_width=30,
         browse_file=False,
         browse_dir=False,
         filetypes=None,
@@ -391,7 +446,7 @@ class YamlGeneratorApp(tk.Tk):
         """line with label + entry + opt brows button"""
         row = ttk.Frame(parent)
         row.pack(fill="x", pady=3)
-        ttk.Label(row, text=label, width=20, anchor="w").pack(side="left")
+        ttk.Label(row, text=label, width=label_width, anchor="w").pack(side="left")
 
         var = tk.StringVar(value=default)
         setattr(self, f"var_{key}", var)
@@ -409,25 +464,27 @@ class YamlGeneratorApp(tk.Tk):
         entry.pack(side="left", padx=(0, 5))
 
         if browse_file:
-
             def _browse(v=var, ft=filetypes):
                 path = filedialog.askopenfilename(
                     filetypes=ft or [("All files", "*.*")],
-                    initialdir=Path.home()
+                    initialdir=self.last_opened_dir
                 )
                 if path:
                     v.set(path)
+                    setattr(self, "last_opened_dir", Path(path).parent)
 
             ttk.Button(
                 row, text=get_string("📂 Browse"), command=_browse, width=10
             ).pack(side="left")
 
         if browse_dir:
-
             def _browse_dir(v=var):
-                path = filedialog.askdirectory()
+                path = filedialog.askdirectory(
+                    initialdir=self.last_opened_dir
+                )
                 if path:
                     v.set(path)
+                    setattr(self, "last_opened_dir", Path(path))
 
             ttk.Button(
                 row, text=get_string("📂 Browse"), command=_browse_dir, width=10
@@ -483,7 +540,8 @@ class YamlGeneratorApp(tk.Tk):
         self.steps_canvas.bind("<Configure>", self._on_canvas_configure)
 
         # mouse wheel bind
-        self.steps_canvas.bind("<MouseWheel>", self._on_mousewheel_steps)
+        self._bind_wheel_recursive(self.steps_canvas)
+        self._bind_wheel_recursive(self.steps_inner)
 
     def _on_steps_configure(self, event):
         self.steps_canvas.configure(scrollregion=self.steps_canvas.bbox("all"))
@@ -621,6 +679,8 @@ class YamlGeneratorApp(tk.Tk):
                 cmd_parts = [uv_path, "run", lspicebatch_path, "-c", yaml_path]
                 if hasattr(self, "var_encode_only") and self.var_encode_only.get():
                     cmd_parts.append("--encode-only")
+                if hasattr(self, "var_skip_encode") and self.var_skip_encode.get():
+                    cmd_parts.append("--skip-encode")
                 if hasattr(self, "var_keep_images") and self.var_keep_images.get():
                     cmd_parts.append("--keep-images")
                 if hasattr(self, "var_cleanup") and self.var_cleanup.get():
@@ -726,7 +786,7 @@ class YamlGeneratorApp(tk.Tk):
         data["image"] = {
             "dpi": self._cast(self.var_image_dpi.get()),
             "width": self._cast(self.var_image_width.get()),
-            "heigth": self._cast(self.var_image_heigth.get()),
+            "height": self._cast(self.var_image_height.get()),
         }
 
         # input_file
@@ -830,15 +890,16 @@ class YamlGeneratorApp(tk.Tk):
         return path
 
     
-    # lod yaml    
+    # load yaml    
     def _load_yaml(self):
         path = filedialog.askopenfilename(
             filetypes=[("YAML files", "*.yaml *.yml"), ("All files", "*.*")],
             title="Load YAML file",
-            initialdir=Path.home(),
+            initialdir=self.last_opened_dir
         )
         if not path:
             return
+        setattr(self, "last_opened_dir", str(Path(path).parent))
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
@@ -858,7 +919,7 @@ class YamlGeneratorApp(tk.Tk):
         img = data.get("image", {})
         self.var_image_dpi.set(str(img.get("dpi", 100)))
         self.var_image_width.set(str(img.get("width", 1920)))
-        self.var_image_heigth.set(str(img.get("heigth", 1080)))
+        self.var_image_height.set(str(img.get("height", 1080)))
         if reload_input:
             self.var_input_file.set(data.get("input_file", ""))
         self.var_parallel_sim.set(str(data.get("parallel_sim", 4)))

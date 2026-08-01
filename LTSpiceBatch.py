@@ -1,5 +1,6 @@
 import argparse
 import concurrent.futures
+import json
 import math
 import os
 import signal
@@ -321,7 +322,7 @@ show_freq_domains: {self.show_freq_domains}
         fig, mag = plt.subplots(
             figsize=(
                 self.config["image"]["width"] / self.config["image"]["dpi"],
-                self.config["image"]["heigth"] / self.config["image"]["dpi"],
+                self.config["image"]["height"] / self.config["image"]["dpi"],
             ),
             dpi=self.config["image"]["dpi"],
             layout="tight",
@@ -378,6 +379,7 @@ show_freq_domains: {self.show_freq_domains}
         phase.legend(loc="upper right")
 
         text_lines = []
+        params = []
         for param in raw_file_path.stem.split("-")[1:]:
             param_name = "_".join(param.split("_")[:-1])
             try:
@@ -388,6 +390,7 @@ show_freq_domains: {self.show_freq_domains}
                 except ValueError:
                     param_value = param.split("_")[-1]
             text_lines.append(f"""{param_name} = {param_value}""")
+            params.append({param_name: param_value})
         text = "\n".join(text_lines)
 
         pt = phase.text(
@@ -461,7 +464,7 @@ show_freq_domains: {self.show_freq_domains}
             ).with_suffix(".png")
         except Exception as e:
             print("filenameException", e)
-        fig.savefig(filename)
+        fig.savefig(filename, metadata={"Author": "github.com/bmfp/LTSpiceBatch", "Description": json.dumps({"params": params, "step": self.step["name"], "traces": tracestoplot})})
         plt.close()
         return
 
@@ -477,7 +480,7 @@ show_freq_domains: {self.show_freq_domains}
         fig, ax = plt.subplots(
             figsize=(
                 self.config["image"]["width"] / self.config["image"]["dpi"],
-                self.config["image"]["heigth"] / self.config["image"]["dpi"],
+                self.config["image"]["height"] / self.config["image"]["dpi"],
             ),
             dpi=self.config["image"]["dpi"],
             layout="tight",
@@ -541,6 +544,7 @@ show_freq_domains: {self.show_freq_domains}
         )
         ax.legend(loc="upper left")
 
+        params = []
         text_lines = []
         for param in raw_file_path.stem.split("-")[1:]:
             param_name = "_".join(param.split("_")[:-1])
@@ -552,6 +556,7 @@ show_freq_domains: {self.show_freq_domains}
                 except ValueError:
                     param_value = param.split("_")[-1]
             text_lines.append(f"""{param_name} = {param_value}""")
+            params.append({param_name: param_value})
         text = "\n".join(text_lines)
 
         pt = ax.text(0, 0, text, fontsize=14, color="white", transform=ax.transAxes)
@@ -579,7 +584,7 @@ show_freq_domains: {self.show_freq_domains}
         except Exception as e:
             print("filenameException", e)
         finally:
-            fig.savefig(filename)
+            fig.savefig(filename, metadata={"Author": "github.com/bmfp/LTSpiceBatch", "Description": json.dumps({"params": params, "step": self.step["name"], "traces": tracestoplot})})
             plt.close()
         return
 
@@ -595,7 +600,7 @@ show_freq_domains: {self.show_freq_domains}
         fig, ax = plt.subplots(
             figsize=(
                 self.config["image"]["width"] / self.config["image"]["dpi"],
-                self.config["image"]["heigth"] / self.config["image"]["dpi"],
+                self.config["image"]["height"] / self.config["image"]["dpi"],
             ),
             dpi=self.config["image"]["dpi"],
             layout="tight",
@@ -628,6 +633,7 @@ show_freq_domains: {self.show_freq_domains}
         )
         ax.legend(loc="upper left")
 
+        params = []
         text_lines = []
         for param in raw_file_path.stem.split("-")[1:]:
             param_name = "_".join(param.split("_")[:-1])
@@ -638,6 +644,7 @@ show_freq_domains: {self.show_freq_domains}
                     param_value = float(param.split("_")[-1])
                 except ValueError:
                     param_value = param.split("_")[-1]
+            params.append({param_name: param_value})
             text_lines.append(f"""{param_name} = {param_value}""")
         text = "\n".join(text_lines)
 
@@ -666,7 +673,7 @@ show_freq_domains: {self.show_freq_domains}
         except Exception as e:
             print("filenameException", e)
         finally:
-            fig.savefig(filename)
+            fig.savefig(filename, metadata={"Author": "github.com/bmfp/LTSpiceBatch", "Description": json.dumps({"params": params, "step": self.step["name"], "traces": tracestoplot})})
             plt.close()
         return
 
@@ -760,6 +767,58 @@ show_freq_domains: {self.show_freq_domains}
         for f in glob(f"{self.temp_folder}/*"):
             os.remove(f)
 
+    def save_images(self):
+        destdir_name = datetime.strftime(datetime.now(), "%Y%m%d-%H%M%S")
+        destdir = Path.joinpath(Path(self.input_file).parent, destdir_name)
+        if not destdir.exists():
+            self.logprint(f"Creating directory {str(destdir)}")
+            Path.mkdir(destdir, mode=0o750, exist_ok=True)
+        for f in Path(self.temp_folder).iterdir():
+            f.copy(Path.joinpath(destdir, f.name))
+        self.logprint(f"Images copied to {destdir}")
+        self.janitor()
+
+    @staticmethod
+    def _cast(value):
+        """try to cast as int/float, or keep string."""
+        power = 0
+        try:
+            if int(value) >= 1:
+                return int(value)
+        except (ValueError, TypeError):
+            pass
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            if value.lower().endswith("t"):
+                value = value[:-1]
+                power = 12
+            elif value.lower().endswith("g"):
+                value = value[:-1]
+                power = 9
+            elif value.lower().endswith("meg"):
+                value = value[:-3]
+                power = 6
+            elif value.lower().endswith("k"):
+                value = value[:-1]
+                power = 3
+            elif value.lower().endswith("m"):
+                value = value[:-1]
+                power = -3
+            elif value.lower().endswith("u"):
+                value = value[:-1]
+                power = -6
+            elif value.lower().endswith("n"):
+                value = value[:-1]
+                power = -9
+            elif value.lower().endswith("p"):
+                value = value[:-1]
+                power = -12
+            elif value.lower().endswith("f"):
+                value = value[:-1]
+                power = -15
+            return LTSpiceBatch._cast(f"{value}e{power}")
+
     def run(self, step):
         """
         run simulation batch
@@ -790,10 +849,10 @@ show_freq_domains: {self.show_freq_domains}
             elif isinstance(self.parameters[p], dict):
                 parameters_matrix.append(
                     numpy.arange(
-                        float(self.parameters[p]["start"]),
-                        float(self.parameters[p]["stop"])
-                        + float(self.parameters[p]["step"]),
-                        float(self.parameters[p]["step"]),
+                        LTSpiceBatch._cast(self.parameters[p]["start"]),
+                        LTSpiceBatch._cast(self.parameters[p]["stop"])
+                        + LTSpiceBatch._cast(self.parameters[p]["step"]),
+                        LTSpiceBatch._cast(self.parameters[p]["step"]),
                     )
                 )
         for i in self.product(parameters_matrix):
@@ -801,10 +860,6 @@ show_freq_domains: {self.show_freq_domains}
         if "sim_command" in step:
             netlist.remove_Xinstruction(r"^\.(ac|tran)")
             netlist.add_instruction(step["sim_command"])
-
-        # server = TCPServer(host="localhost", port=5000, mainpid=os.getpid())
-        # server_thread = threading.Thread(target=server.start, daemon=True)
-        # server_thread.start()
 
         self.logprint(
             f"""Step {step["name"]} - Processing {len(parameters_list)} combinations"""
@@ -817,7 +872,6 @@ show_freq_domains: {self.show_freq_domains}
             # overriding he automatic netlist naming
             netlist_name_items = []
             for k, v in parameters_set.items():
-                # print(k,v)
                 if isinstance(v, float):
                     v = f"{v:.15f}"
                 netlist_name_items.append(f"""{k}_{v}""")
@@ -861,7 +915,6 @@ show_freq_domains: {self.show_freq_domains}
         plot_end = datetime.now()
         self.logprint(f"Preparing plots done in {plot_end - plot_start}")
         runner.cleanup_files()
-        # self.server.stop()
 
         # Sim Statistics
         self.logprint(
@@ -926,20 +979,6 @@ show_freq_domains: {self.show_freq_domains}
             self.logprint(f"Finished in {end - self.start}s")
         except TypeError:
             pass
-
-        # save base64 encoded images
-        # with open(f"{Path(__file__).parent}/diaporama.html", "r") as f:
-        #     html_tmpl = f.read()
-        # b64_imglist = []
-        # for img in list(set(imglist)):
-        #     b64_imglist.append(f"temp/{img}")
-        # with open(
-        #     self.input_file.replace(
-        #         "asc", step["name"] + f"""{"_fft_" if fft else ""}.html"""
-        #     ),
-        #     "w",
-        # ) as f:
-        #     f.write(html_tmpl.replace("__IMAGEDATA__", json.dumps(b64_imglist)))
 
     def server_stop(self):
         self.server.stop()
@@ -1006,7 +1045,6 @@ if __name__ == "__main__":
     ltsb = LTSpiceBatch(args=args)
     if args.cleanup:
         ltsb.janitor()
-        sys.exit(0)
     ltsb.test_ffmpeg()
     for step in ltsb.config["steps"]:
         step["name"] = "".join(
@@ -1023,4 +1061,6 @@ if __name__ == "__main__":
             ltsb.encode_video(step=step, fft=True)
         if not args.keep_images:
             ltsb.janitor()
+    if args.keep_images:
+        ltsb.save_images()
     ltsb.server_stop()

@@ -772,7 +772,7 @@ show_freq_domains: {self.show_freq_domains}
         destdir = Path.joinpath(Path(self.input_file).parent, destdir_name)
         if not destdir.exists():
             self.logprint(f"Creating directory {str(destdir)}")
-            Path.mkdir(destdir, mode=750, exist_ok=True)
+            Path.mkdir(destdir, mode=0o750, exist_ok=True)
         for f in Path(self.temp_folder).iterdir():
             f.copy(Path.joinpath(destdir, f.name))
         self.logprint(f"Images copied to {destdir}")

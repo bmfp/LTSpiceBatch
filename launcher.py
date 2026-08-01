@@ -16,7 +16,7 @@ from chardet import UniversalDetector
 # default data
 DEFAULT_CONFIG = {
     "ffmpeg_framerate": 6,
-    "image": {"dpi": 100, "width": 1920, "heigth": 1080},
+    "image": {"dpi": 100, "width": 1920, "height": 1080},
     "input_file": "",
     "steps": [],
 }
@@ -315,7 +315,7 @@ class YamlGeneratorApp(tk.Tk):
 
         self._labeled_entry(lf2, "dpi :", "image_dpi", "100", width=10)
         self._labeled_entry(lf2, "width (px) :", "image_width", "1920", width=10)
-        self._labeled_entry(lf2, "height (px) :", "image_heigth", "1080", width=10)
+        self._labeled_entry(lf2, "height (px) :", "image_height", "1080", width=10)
 
         # ---- simulation ----
         lf3 = ttk.LabelFrame(self.global_frame, text=get_string(" ⚡ Simulation Settings "), padding=10)
@@ -786,7 +786,7 @@ class YamlGeneratorApp(tk.Tk):
         data["image"] = {
             "dpi": self._cast(self.var_image_dpi.get()),
             "width": self._cast(self.var_image_width.get()),
-            "heigth": self._cast(self.var_image_heigth.get()),
+            "height": self._cast(self.var_image_height.get()),
         }
 
         # input_file
@@ -919,7 +919,7 @@ class YamlGeneratorApp(tk.Tk):
         img = data.get("image", {})
         self.var_image_dpi.set(str(img.get("dpi", 100)))
         self.var_image_width.set(str(img.get("width", 1920)))
-        self.var_image_heigth.set(str(img.get("heigth", 1080)))
+        self.var_image_height.set(str(img.get("height", 1080)))
         if reload_input:
             self.var_input_file.set(data.get("input_file", ""))
         self.var_parallel_sim.set(str(data.get("parallel_sim", 4)))

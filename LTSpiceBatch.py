@@ -322,7 +322,7 @@ show_freq_domains: {self.show_freq_domains}
         fig, mag = plt.subplots(
             figsize=(
                 self.config["image"]["width"] / self.config["image"]["dpi"],
-                self.config["image"]["heigth"] / self.config["image"]["dpi"],
+                self.config["image"]["height"] / self.config["image"]["dpi"],
             ),
             dpi=self.config["image"]["dpi"],
             layout="tight",
@@ -480,7 +480,7 @@ show_freq_domains: {self.show_freq_domains}
         fig, ax = plt.subplots(
             figsize=(
                 self.config["image"]["width"] / self.config["image"]["dpi"],
-                self.config["image"]["heigth"] / self.config["image"]["dpi"],
+                self.config["image"]["height"] / self.config["image"]["dpi"],
             ),
             dpi=self.config["image"]["dpi"],
             layout="tight",
@@ -600,7 +600,7 @@ show_freq_domains: {self.show_freq_domains}
         fig, ax = plt.subplots(
             figsize=(
                 self.config["image"]["width"] / self.config["image"]["dpi"],
-                self.config["image"]["heigth"] / self.config["image"]["dpi"],
+                self.config["image"]["height"] / self.config["image"]["dpi"],
             ),
             dpi=self.config["image"]["dpi"],
             layout="tight",

@@ -117,7 +117,7 @@ jobs:
           cp 'high-low pass.asc' 'high-low pass.yml' launcher.py LTSpiceBatch.py Readme.md LICENSE pyproject.toml run*.bat ffmpeg.exe uv.exe ${{ env.release_name }}
           zip -r ${{ env.release_name }}.zip ${{ env.release_name }}
 
-      - name: Upload combined archive (prerelease/draft)
+      - name: Upload combined archive (release/nodraft)
         uses: softprops/action-gh-release@v3
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         env:

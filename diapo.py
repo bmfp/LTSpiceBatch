@@ -196,8 +196,9 @@ class SlideshowApp(tk.Tk):
     # ==================================================================
     def _browse_folder(self):
         """Ouvre le sélecteur de dossier et charge les PNG."""
-        folder = Path(filedialog.askdirectory(title="Choisir un dossier d'images"))
-        if not folder:
+        try:
+            folder = Path(filedialog.askdirectory(title="Choisir un dossier d'images", mustexist=True))
+        except TypeError:
             return
 
         try:
@@ -217,9 +218,15 @@ class SlideshowApp(tk.Tk):
         # Load images properties
         for f in self.images_files:
             with Image.open(f) as img:
-                self.images_files_props[f] = json.loads(img.info["Description"])
-        with open("json.json", "w") as f:
-            f.write(json.dumps(self.images_files_props))
+                try:
+                    self.images_files_props[f] = json.loads(img.info["Description"])
+                except (json.JSONDecodeError, KeyError):
+                    del self.images_files_props[f]
+
+        if len(self.images_files_props) == 0:
+            messagebox.showwarning("Aucune image valide",
+                "Aucune image ne contient de métadonnées JSON valides.")
+            return
 
         # Mode maximisé par défaut (pas plein écran)
         self.state('normal')

@@ -106,9 +106,7 @@ class LTSpiceBatch(object):
         self.temp_folder = Path(
             self.config.get("temp_folder", f"{tempfile.gettempdir()}/LTSpiceBatch")
         )
-        self.imglist_file = (
-            f"{self.temp_folder}/{datetime.timestamp(datetime.now())}_imglist.txt"
-        )
+        self.imglist_file = ""
         self.input_file = self.config["input_file"]
         self.output_file = ""
         self.ffmpeg_bin = Path(
@@ -584,7 +582,7 @@ show_freq_domains: {self.show_freq_domains}
         except Exception as e:
             print("filenameException", e)
         finally:
-            fig.savefig(filename, metadata={"Author": "github.com/bmfp/LTSpiceBatch", "Description": json.dumps({"params": params, "step": self.step["name"], "traces": tracestoplot})})
+            fig.savefig(filename, metadata={"Author": "github.com/bmfp/LTSpiceBatch", "Description": json.dumps({"params": params, "step": f"""FFT_{self.step["name"]}""", "traces": tracestoplot})})
             plt.close()
         return
 
@@ -954,6 +952,7 @@ show_freq_domains: {self.show_freq_domains}
                 if (temp_folder / img).is_file() and img.startswith(f"{prefix}{stem}")
             ]
             duration = str(self.step.get("ffmpeg_framerate", 1 / self.ffmpeg_framerate))
+            self.imglist_file = f"{self.temp_folder}/{step["name"]}_{datetime.timestamp(datetime.now())}_imglist.txt"
             with open(self.imglist_file, "w") as f:
                 f.write(
                     "\n".join(

@@ -67,7 +67,7 @@ jobs:
         run: |
           mkdir ${{ env.release_name }}
           cp 'high-low pass.asc' 'high-low pass.yml' launcher.py LTSpiceBatch.py Readme.md run*.sh LICENSE pyproject.toml ffmpeg uv ${{ env.release_name }}
-          chmod 755 ${{ env.release_name }}/run.sh
+          chmod 750 ${{ env.release_name }}/run*.sh
           tar czf ${{ env.release_name }}.tar.gz ${{ env.release_name }}
 
       - name: Linux - Cleanup

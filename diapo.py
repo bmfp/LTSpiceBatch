@@ -15,7 +15,6 @@ class SlideshowApp(tk.Tk):
 
     def __init__(self):
         super().__init__()
-        # self = root
         self.geometry("1024x768")
         self.title("Diaporama")
         
@@ -214,12 +213,10 @@ class SlideshowApp(tk.Tk):
                 "Le dossier ne contient pas de fichiers PNG.")
             return
 
-        print(self.images_files)
         _fft_images = []
         for img in self.images_files:
             if "fft_" in img:
                 _fft_images.append(img.replace("fft_", "", 1))
-        print(_fft_images)
 
         self.images_files = _fft_images + self.images_files
         self.images_files_filtered = self.images_files
@@ -358,7 +355,8 @@ class SlideshowApp(tk.Tk):
     def _var_change_callback(self, *args):
         step = self.vars["spinbox_steps_value"].get()
         setattr(self, "current_step", step)
-        self._aggr_props(step=step)
+        if args[0] == "spinbox_steps_value":
+            self._aggr_props(step=step)
         if "from" in args[0] or "to" in args[0]:
             values = self.vars[args[0].replace("_from_value", "_values").replace("_to_value", "_values")]
             selected_value = self.vars[args[0]].get()

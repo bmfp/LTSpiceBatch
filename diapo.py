@@ -168,11 +168,11 @@ class SlideshowApp(tk.Tk):
         def make_btn(text, command):
             return ttk.Button(ctrl, text=text, command=command)
 
-        self.btn_prev   = make_btn("◀ Previous",   self._prev)
+        self.btn_prev   = make_btn("◀ Previous", self._prev)
         self.btn_play   = make_btn("▶ Play",     self._toggle_play)
         self.btn_next   = make_btn("Next ▶",     self._next)
-        self.btn_fs     = make_btn("Fullscreen",   self._toggle_fullscreen)
-        self.btn_folder = make_btn("Directory…",      self._browse_folder)
+        self.btn_fs     = make_btn("Fullscreen",  self._toggle_fullscreen)
+        self.btn_folder = make_btn("Directory…",  self._browse_folder)
 
         self.btn_prev.pack(side=tk.LEFT, padx=4)
         self.btn_play.pack(side=tk.LEFT, padx=4)

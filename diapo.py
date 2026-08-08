@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Diaporama d'images PNG avec Tkinter."""
+"""Images slideshow"""
 
 import json
 import os
@@ -11,15 +11,15 @@ from PIL import Image, ImageTk
 
 
 class SlideshowApp(tk.Tk):
-    """Application de diaporama avec préchargement."""
+    """Slideshow app with preloading"""
 
     def __init__(self):
         super().__init__()
         self.geometry("1024x768")
-        self.title("Diaporama")
+        self.title("LTSpiceBatch Slideshow")
         
 
-        # --- État du diaporama ---
+        # --- Slideshow status ---
         self.current_step = ""
         self.images_files = []
         self.images_files_props = {}
@@ -28,16 +28,17 @@ class SlideshowApp(tk.Tk):
         self.step_params = {}
         self.current_index = 0
         self.playing = False
-        self.interval_ms = 3000
+        self.interval_ms = 1000
+        self.interval_ms_min = int(1000 / 24)
+        self.interval_ms_max = 2000
         self.timer_id = None
 
-        # --- Préchargement : pool d'images (max 2 en avance) ---
+        # --- Preload: images pool ---
         self.preload_count = 2
-        self._pool = {}                # {index: {"original": PIL.Image}}
-        self.current_photo = None      # Référence forte pour éviter GC
+        self._pool = {}
+        self.current_photo = None
         self.canvas_img_id = None
 
-        # Variable de contrôle indispensable à l'affichage de la Spinbox
         self.interval_var = tk.IntVar(value=self.interval_ms)
 
         # --- Interface ---
@@ -142,37 +143,36 @@ class SlideshowApp(tk.Tk):
         )
 
     # ==================================================================
-    # Construction de l'interface
+    # Interface build
     # ==================================================================
     def _build_ui(self):
-        """Crée les widgets et la mise en page."""
+        """Creates widgets and layout"""
         main = ttk.Frame(self, padding=10)
         main.pack(fill=tk.BOTH, expand=True)
 
-        # Canvas pour l'image (fond noir, pas de bordure)
+        # Image canvas
         self.canvas = tk.Canvas(main, bg="#2b2b2b", highlightthickness=0)
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
-        # Redimensionner quand la fenêtre change de taille
+        # Resize canvas on window resize
         self.canvas.bind("<Configure>", self._on_canvas_resize)
 
         # Image Filters
         self.filters = ttk.Frame(main)
         self.filters.pack(fill=tk.X, pady=(10, 0))
-        # ttk.Label(self.filters, text="traces").pack(side=tk.LEFT, padx=(0, 4))
 
-        # Barre de contrôles (en bas)
+        # Controls bar
         ctrl = ttk.Frame(main)
         ctrl.pack(fill=tk.X, pady=(10, 0))
 
         def make_btn(text, command):
             return ttk.Button(ctrl, text=text, command=command)
 
-        self.btn_prev   = make_btn("◀ Précédent",   self._prev)
-        self.btn_play   = make_btn("▶ Lecture",     self._toggle_play)
-        self.btn_next   = make_btn("Suivant ▶",     self._next)
-        self.btn_fs     = make_btn("Plein écran",   self._toggle_fullscreen)
-        self.btn_folder = make_btn("Dossier…",      self._browse_folder)
+        self.btn_prev   = make_btn("◀ Previous", self._prev)
+        self.btn_play   = make_btn("▶ Play",     self._toggle_play)
+        self.btn_next   = make_btn("Next ▶",     self._next)
+        self.btn_fs     = make_btn("Fullscreen",  self._toggle_fullscreen)
+        self.btn_folder = make_btn("Directory…",  self._browse_folder)
 
         self.btn_prev.pack(side=tk.LEFT, padx=4)
         self.btn_play.pack(side=tk.LEFT, padx=4)
@@ -180,9 +180,9 @@ class SlideshowApp(tk.Tk):
         self.btn_fs.pack(side=tk.RIGHT, padx=4)
         self.btn_folder.pack(side=tk.RIGHT, padx=4)
 
-        ttk.Label(ctrl, text="Intervalle (ms)").pack(side=tk.LEFT, padx=(30, 4))
+        ttk.Label(ctrl, text="Interval (ms)").pack(side=tk.LEFT, padx=(30, 4))
         ttk.Spinbox(
-            ctrl, from_=250, to=6000, increment=250,
+            ctrl, from_=self.interval_ms_min, to=self.interval_ms_max, increment=250,
             width=8, textvariable=self.interval_var,
             command=self._on_interval_change,
             name="spinbox_interval"
@@ -191,12 +191,12 @@ class SlideshowApp(tk.Tk):
         self.canvas.bind_all("<MouseWheel>", self._on_mousewheel, add="+")
 
     # ==================================================================
-    # Chargement du dossier
+    # Directory load
     # ==================================================================
     def _browse_folder(self):
-        """Ouvre le sélecteur de dossier et charge les PNG."""
+        """Open directory and load png images."""
         try:
-            folder = Path(filedialog.askdirectory(title="Choisir un dossier d'images", mustexist=True))
+            folder = Path(filedialog.askdirectory(title="Choose images directory", mustexist=True))
         except TypeError:
             return
 
@@ -209,8 +209,8 @@ class SlideshowApp(tk.Tk):
             self.images_files = sorted(glob.glob(pattern))
 
         if not self.images_files:
-            messagebox.showwarning("Aucune image",
-                "Le dossier ne contient pas de fichiers PNG.")
+            messagebox.showwarning("No image",
+                "No png image in directory")
             return
 
         _fft_images = []
@@ -231,11 +231,10 @@ class SlideshowApp(tk.Tk):
                     del self.images_files_props[f]
 
         if len(self.images_files_props) == 0:
-            messagebox.showwarning("Aucune image valide",
-                "Aucune image ne contient de métadonnées JSON valides.")
+            messagebox.showwarning("No valid image",
+                "No image with valid metadata")
             return
 
-        # Mode maximisé par défaut (pas plein écran)
         self.state('normal')
         self.is_fullscreen = False
         self.w_h = (self.canvas.winfo_width(), self.canvas.winfo_height())
@@ -263,7 +262,7 @@ class SlideshowApp(tk.Tk):
         self._show_current()
 
     # ==================================================================
-    # Lecture / Pause
+    # Play / Pause
     # ==================================================================
     def _toggle_play(self):
         if not self.images_files_filtered:
@@ -291,17 +290,17 @@ class SlideshowApp(tk.Tk):
         )
 
     # ==================================================================
-    # Affichage + préchargement
+    # Display + preload
     # ==================================================================
     def _show_current(self):
-        """Affiche l'image courante et précharge les suivantes."""
+        """Display current image and preload next"""
         if not self.images_files_filtered:
             return
 
         n = len(self.images_files_filtered)
         idx = self.current_index
 
-        photo, original = self._get_or_load(idx)
+        photo, _ = self._get_or_load(idx)
 
         if self.canvas_img_id is None:
             self.canvas_img_id = self.canvas.create_image(
@@ -313,16 +312,15 @@ class SlideshowApp(tk.Tk):
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
         self.current_photo = photo
 
-        # Précharger les N images suivantes dans le pool
+        # Preload next images in pool
         for offset in range(1, self.preload_count + 1):
             pre_idx = (idx + offset) % n
             if pre_idx not in self._pool:
                 _, orig = self._get_or_load(pre_idx)
-                # On ne stocke que l'original PIL — la PhotoImage est éphémère.
                 self._pool[pre_idx] = {"original": orig}
 
     def _get_or_load(self, idx):
-        """Retourne (PhotoImage, original_pil) pour l'index donné."""
+        """Returns (PhotoImage, original_pil) for index"""
         n = len(self.images_files_filtered)
         path = self.images_files_filtered[idx % n]
         pil_img = Image.open(path)
@@ -341,7 +339,7 @@ class SlideshowApp(tk.Tk):
         return new_photo, pil_img
 
     def _clear_pool(self):
-        """Libère toutes les images du pool ET du canvas (sauf la courante)."""
+        """Clear all images from pool and canvas (all but current)"""
         if self.canvas_img_id is not None:
             try:
                 self.canvas.delete(self.canvas_img_id)
@@ -349,13 +347,13 @@ class SlideshowApp(tk.Tk):
                 pass
             self.canvas_img_id = None
 
-        # Vider complètement le pool — l'image courante sera rechargée si besoin.
         self._pool.clear()
 
     def _var_change_callback(self, *args):
+        """React to interface changes"""
         step = self.vars["spinbox_steps_value"].get()
         setattr(self, "current_step", step)
-        if args[0] == "spinbox_steps_value":
+        if args[0] == "spinbox_steps":
             self._aggr_props(step=step)
         if "from" in args[0] or "to" in args[0]:
             values = self.vars[args[0].replace("_from_value", "_values").replace("_to_value", "_values")]
@@ -395,6 +393,7 @@ class SlideshowApp(tk.Tk):
         self._next()
 
     def _aggr_props(self, step=None):
+        """Aggregate steps and parameters"""
         if step is not None:
             self.step_params = {}
         for _, props in self.images_files_props.items():
@@ -421,7 +420,7 @@ class SlideshowApp(tk.Tk):
         for param in self.step_params:
             if self.step_params[param] == []:
                 continue
-            sorted_values = self.step_params[param] #sorted(self.step_params[param])
+            sorted_values = self.step_params[param]
             self.vars[f"spinbox_{param}_from_value"] = tk.DoubleVar(self.filters, sorted_values[0],  f"spinbox_{param}_from_value")
             self.vars[f"spinbox_{param}_from_value"].trace_add("write", self._var_change_callback)
             self.vars[f"spinbox_{param}_values"] = sorted_values
@@ -435,10 +434,10 @@ class SlideshowApp(tk.Tk):
             self.vars[f"spinbox_{param}_to_combobox"].pack(side=tk.LEFT, padx=(0, 4))
 
     # ==================================================================
-    # Plein écran
+    # Fullscreen
     # ==================================================================
-    def _toggle_fullscreen(self, event=None):
-        """Bascule entre plein écran et fenêtre maximisée."""
+    def _toggle_fullscreen(self, _=None):
+        """Toggle between fullscreen and windowed"""
         if not self.is_fullscreen:
             self.attributes('-fullscreen', True)
             self.canvas.config(cursor="none")
@@ -450,79 +449,77 @@ class SlideshowApp(tk.Tk):
             self.is_fullscreen = False
 
     # ==================================================================
-    # Temporisation
+    # Tempo
     # ==================================================================
-    def _on_interval_change(self, value=None):
-        """Mis à jour de l'intervalle depuis la Spinbox."""
+    def _on_interval_change(self, _=None):
+        """Update interval from spinbox"""
         try:
             new_val = int(float(self.interval_var.get()))
-            if 250 <= new_val <= 6000:
+            if self.interval_ms_min <= new_val <= self.interval_ms_max:
                 self.interval_ms = new_val
         except (ValueError, tk.TclError):
             pass
 
     # ==================================================================
-    # Raccourcis clavier
+    # Keyboard shortcuts
     # ==================================================================
     def _bind_keys(self):
-        """Raccourcis clavier globaux."""
+        """Global keyboard shortcuts"""
         self.bind("<Left>",  lambda e: self._prev())
         self.bind("<Right>", lambda e: self._next())
         self.bind("<space>", lambda e: self._toggle_play())
         self.bind("f",       lambda e: self._toggle_fullscreen())
 
     def _on_canvas_resize(self, event):
-        """Redimensionne l'image courante pour remplir le canvas."""
+        """Resize current image to fit canvas"""
         if not self.images_files or self.current_photo is None:
             return
         
-        # Dimensions disponibles du canvas (sans les marges)
-        canvas_w = event.width #- 20   # marge horizontale
-        canvas_h = event.height #- 80  # marge verticale (barre de contrôles)
+        # Avail canvas dimensions
+        canvas_w = event.width
+        canvas_h = event.height
         
         if canvas_w <= 0 or canvas_h <= 0:
             return
         
-        # Dimensions originales de l'image
+        # Original image dimensions
         img_w = self.current_photo.width()
         img_h = self.current_photo.height()
         
-        # Calculer le ratio pour garder les proportions (fit inside)
+        # Get proprtions ratio
         ratio = min(canvas_w / img_w, canvas_h / img_h)
-        new_w = int(img_w * ratio)
-        new_h = int(img_h * ratio)
         self.w_h = (int(img_w * ratio), int(img_h * ratio))
-        
-        # if new_w <= 0 or new_h <= 0:
+
         if self.w_h[0] <= 0 or self.w_h[1] <= 0:
             return
         
-        # Redimensionner l'image PIL et recréer le PhotoImage
+        # Resize image
         original_path = self.images_files[self.current_index]
         pil_img = Image.open(original_path)
-        # pil_resized = pil_img.resize((new_w, new_h), Image.LANCZOS)
         pil_resized = pil_img.resize(self.w_h, Image.LANCZOS)
         
         new_photo = ImageTk.PhotoImage(pil_resized)
         
-        # Mettre à jour l'image du canvas
+        # Update image in canvas
         if self.canvas_img_id is None:
             self.canvas_img_id = self.canvas.create_image(0, 0, anchor=tk.NW, image=new_photo)
         else:
             self.canvas.itemconfig(self.canvas_img_id, image=new_photo)
-        
-        # Garder une référence forte pour éviter le garbage collector
+
         self.current_photo = new_photo
         
-        # Ajuster la zone de scroll du canvas
+        # Adjust canvas scroll zone
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
 
     def _on_mousewheel(self, event: tk.Event):
-        if event.widget.winfo_name() == "spinbox_interval":
+        try:
+            if event.widget.winfo_name() == "spinbox_interval":
+                return
+        except AttributeError:
             return
-        if event.num == 4:      # Linux up
+        if event.num == 4:   # Linux up
             self._next()
-        elif event.num == 5:    # Linux down
+        elif event.num == 5: # Linux down
             self._prev()
         else:
             if event.delta > 0:

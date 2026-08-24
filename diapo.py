@@ -44,7 +44,7 @@ class SlideshowApp(tk.Tk):
         # --- Interface ---
         self._build_styles()
         self._build_ui()
-        self.bind("<Escape>", lambda e: self._toggle_fullscreen(False))
+        self.bind("<Escape>", lambda _: self._toggle_fullscreen(False))
         self.is_fullscreen = False
 
     # ttk styles
@@ -55,31 +55,11 @@ class SlideshowApp(tk.Tk):
         BG = "#2b2b2b"
         FG = "#dcdcdc"
         ENTRY_BG = "#3c3f41"
-        ACCENT = "#4a90d9"
         BTN_BG = "#4a90d9"
         BTN_FG = "#ffffff"
-        FRAME_BG = "#313335"
 
         style.configure("TFrame", background=BG)
-        style.configure(
-            "Card.TFrame", background=FRAME_BG, relief="flat", borderwidth=1
-        )
         style.configure("TLabel", background=BG, foreground=FG, font=("Segoe UI", 9))
-        style.configure(
-            "Title.TLabel",
-            background=BG,
-            foreground=ACCENT,
-            font=("Segoe UI", 12, "bold"),
-        )
-        style.configure(
-            "CardTitle.TLabel",
-            background=FRAME_BG,
-            foreground=ACCENT,
-            font=("Segoe UI", 10, "bold"),
-        )
-        style.configure(
-            "Card.TLabel", background=FRAME_BG, foreground=FG, font=("Segoe UI", 9)
-        )
         style.configure(
             "TEntry",
             fieldbackground=ENTRY_BG,
@@ -96,51 +76,6 @@ class SlideshowApp(tk.Tk):
             focusthickness=0,
         )
         style.map("TButton", background=[("active", "#357abd"), ("pressed", "#2a6099")])
-        style.configure(
-            "Danger.TButton",
-            background="#c0392b",
-            foreground="white",
-            font=("Segoe UI", 9, "bold"),
-        )
-        style.map("Danger.TButton", background=[("active", "#e74c3c")])
-        style.configure(
-            "Success.TButton",
-            background="#27ae60",
-            foreground="white",
-            font=("Segoe UI", 9, "bold"),
-        )
-        style.map("Success.TButton", background=[("active", "#2ecc71")])
-        style.configure(
-            "TLabelframe",
-            background=FRAME_BG,
-            foreground=ACCENT,
-            font=("Segoe UI", 9, "bold"),
-        )
-        style.configure(
-            "TLabelframe.Label",
-            background=FRAME_BG,
-            foreground=ACCENT,
-            font=("Segoe UI", 9, "bold"),
-        )
-        style.configure("TNotebook", background=BG, borderwidth=0)
-        style.configure(
-            "TNotebook.Tab",
-            background="#3c3f41",
-            foreground=FG,
-            padding=[10, 4],
-            font=("Segoe UI", 9),
-        )
-        style.map(
-            "TNotebook.Tab",
-            background=[("selected", FRAME_BG)],
-            foreground=[("selected", ACCENT)],
-        )
-        style.configure(
-            "TScrollbar", background=ENTRY_BG, troughcolor=BG, arrowcolor=FG
-        )
-        style.configure(
-            "TSpinbox", fieldbackground=ENTRY_BG, foreground=FG, insertcolor=FG
-        )
 
     # ==================================================================
     # Interface build
@@ -465,10 +400,10 @@ class SlideshowApp(tk.Tk):
     # ==================================================================
     def _bind_keys(self):
         """Global keyboard shortcuts"""
-        self.bind("<Left>",  lambda e: self._prev())
-        self.bind("<Right>", lambda e: self._next())
-        self.bind("<space>", lambda e: self._toggle_play())
-        self.bind("f",       lambda e: self._toggle_fullscreen())
+        self.bind("<Left>",  lambda _: self._prev())
+        self.bind("<Right>", lambda _: self._next())
+        self.bind("<space>", lambda _: self._toggle_play())
+        self.bind("f",       lambda _: self._toggle_fullscreen())
 
     def _on_canvas_resize(self, event):
         """Resize current image to fit canvas"""

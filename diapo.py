@@ -8,6 +8,7 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from PIL import Image, ImageTk
+import yaml
 
 
 class SlideshowApp(tk.Tk):
@@ -17,6 +18,7 @@ class SlideshowApp(tk.Tk):
         super().__init__()
         self.geometry("1024x768")
         self.title("LTSpiceBatch Slideshow")
+        self._load_config()
         
 
         # --- Slideshow status ---
@@ -46,6 +48,20 @@ class SlideshowApp(tk.Tk):
         self._build_ui()
         self.bind("<Escape>", lambda _: self._toggle_fullscreen(False))
         self.is_fullscreen = False
+
+    # load config
+    def _load_config(self):
+        """load last working params"""
+        data = {}
+        config_file = Path(__file__).parent.joinpath(".config.yml")
+        self.last_opened_dir = Path.home()
+        if config_file.exists():
+            with open(config_file, "r", encoding="utf-8") as f:
+                data: dict = yaml.safe_load(f)
+                if data is None:
+                    return
+                if data.get("last_opened_dir"):
+                    self.last_opened_dir = data.get("last_opened_dir")
 
     # ttk styles
     def _build_styles(self):
@@ -131,7 +147,7 @@ class SlideshowApp(tk.Tk):
     def _browse_folder(self):
         """Open directory and load png images."""
         try:
-            folder = Path(filedialog.askdirectory(title="Choose images directory", mustexist=True))
+            folder = Path(filedialog.askdirectory(title="Choose images directory", mustexist=True, initialdir=self.last_opened_dir))
         except TypeError:
             return
 
